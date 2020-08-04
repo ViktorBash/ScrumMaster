@@ -134,3 +134,6 @@ dmypy.json
 
 # Venv
 project_env/
+
+# Node modules
+node_modules/

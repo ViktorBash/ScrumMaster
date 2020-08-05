@@ -20,7 +20,8 @@ class Board(models.Model):
 # many-to-one, users who are shared to a specific board
 class SharedUser(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE)  # board allowed on
-    shared_user = models.ForeignKey(User, on_delete=models.CASCADE)  # user allowed on the board
+    # user allowed on the board
+    shared_user = models.ForeignKey(User, related_name="shared_boards", on_delete=models.CASCADE)
 
     def __str__(self):
         return f"SHARED USER OBJECT, board: {self.board}, shared user: {self.shared_user}"

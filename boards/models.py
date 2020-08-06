@@ -14,13 +14,16 @@ class Board(models.Model):
     owner = models.ForeignKey(User, related_name="board", on_delete=models.CASCADE)  # who owns/creates the board
     created_at = models.DateTimeField(auto_now_add=True)  # when it was created
 
+    class Meta:
+        unique_together = ['title', 'owner']
+
     def __str__(self):
         return self.title
 
 
 # many-to-one, users who are shared to a specific board
 class SharedUser(models.Model):
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)  # board allowed on
+    board = models.ForeignKey(Board, related_name="shared_users", on_delete=models.CASCADE)  # board allowed on
     # user allowed on the board
     shared_user = models.ForeignKey(User, related_name="shared_boards", on_delete=models.CASCADE)
 

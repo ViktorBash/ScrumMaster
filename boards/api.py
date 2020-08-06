@@ -6,6 +6,8 @@ from rest_framework import generics, permissions
 from .serializers import BoardCreateSerializer, BoardInfoSerializer
 from django.http import HttpResponse, JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import serializers
+
 
 # Create a board, POST request, requires authentication, returns board info
 class BoardCreate(generics.GenericAPIView):
@@ -21,6 +23,10 @@ class BoardCreate(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)  # Check serializer is valid, then save it if it is
         board = serializer.save()
+        if isinstance(board, str):
+            return Response({
+                "board": board
+            })
 
         # Return info about the board using the BoardInfoSerializer
         return Response({
@@ -63,3 +69,21 @@ class BoardInfo(generics.GenericAPIView):
             return JsonResponse(serializer.data)
         else:  # They don't have permission, deny them
             return JsonResponse("Permission denied", safe=False)
+
+
+# List the boards request
+class BoardList(generics.GenericAPIView):
+    serializer_class = BoardInfoSerializer
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+
+    def get(self, request, *args, **kwargs):
+        owned_boards = self.request.user.board.all()  # Get all of the boards the user owns
+        shared_user_objects = self.request.user.shared_boards.all()
+        shared_boards_list = [shared_user_object.board for shared_user_object in shared_user_objects]
+        owned_serializer = BoardInfoSerializer(owned_boards, many=True)
+        shared_serializer = BoardInfoSerializer(shared_boards_list, many=True)
+        return JsonResponse(owned_serializer.data + shared_serializer.data, safe=False)
+
+

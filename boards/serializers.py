@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Board, SharedUser, Task
-
+from django.db.utils import IntegrityError
 
 # Board create serializer for POST requests
 class BoardCreateSerializer(serializers.ModelSerializer):
@@ -23,7 +23,10 @@ class BoardCreateSerializer(serializers.ModelSerializer):
 
         # Create the board with the given title and the owner who sent the request
         board = Board(title=validated_data['title'], owner=owner)
-        board.save()  # Save to model
+        try:
+            board.save()  # Save to model
+        except IntegrityError as e:
+            return "You already have a board with that name"
         return board  # Return board object
 
 

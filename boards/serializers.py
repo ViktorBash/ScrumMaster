@@ -34,7 +34,6 @@ class BoardInfoSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'owner', 'created_at']
         read_only_fields = ['id', 'title', 'owner', 'created_at']  # Read only to enforce it is used for GET requests
 
-
 # # Shared User serializer
 # class SharedUserSerializer(serializers.ModelSerializer):
 #     class Meta:

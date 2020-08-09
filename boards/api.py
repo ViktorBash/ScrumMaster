@@ -70,20 +70,47 @@ class BoardInfo(generics.GenericAPIView):
         else:  # They don't have permission, deny them
             return JsonResponse("Permission denied", safe=False)
 
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            board = Board.objects.get(id=pk)
+        except Exception as e:
+            return JsonResponse(str(e), safe=False)
+        if self.request.user == board.owner:
+            board.delete()
+            return JsonResponse("board deleted", safe=False)
+        else:
+            return Response("Incorrect Credentials")
 
-# List the boards request
+    def put(self, request, pk, *args, **kwargs):
+        try:
+            board = Board.objects.get(id=pk)
+        except Exception as e:
+            return JsonResponse(str(e), safe=False)
+        if board.owner == self.request.user:
+            serializer = BoardInfoSerializer(board, data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                return Response(serializer.data)
+        else:
+            return Response("Incorrect Credentials")
+
+
+# List the boards GET request, shows owned and shared boards
 class BoardList(generics.GenericAPIView):
     serializer_class = BoardInfoSerializer
-    permission_classes = [
+    permission_classes = [  # Have to be authenticated
         permissions.IsAuthenticated,
     ]
 
     def get(self, request, *args, **kwargs):
         owned_boards = self.request.user.board.all()  # Get all of the boards the user owns
-        shared_user_objects = self.request.user.shared_boards.all()
+        shared_user_objects = self.request.user.shared_boards.all()  # get all of the shared user objects that belong to
+        # the user
+        # this comprehension turns the shared user objects into a list of the boards the user is shared to
         shared_boards_list = [shared_user_object.board for shared_user_object in shared_user_objects]
-        owned_serializer = BoardInfoSerializer(owned_boards, many=True)
-        shared_serializer = BoardInfoSerializer(shared_boards_list, many=True)
+        owned_serializer = BoardInfoSerializer(owned_boards, many=True)  # serialize the boards owned
+        shared_serializer = BoardInfoSerializer(shared_boards_list, many=True)  # serialize the boards shared to
+        # send both the shared and owned boards as JSON back
         return JsonResponse(owned_serializer.data + shared_serializer.data, safe=False)
 
 

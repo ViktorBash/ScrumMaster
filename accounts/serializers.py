@@ -15,11 +15,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email", "password")
-        extra_kwargs = {"password": {"write_only": True}}
+        extra_kwargs = {"password": {"write_only": True}, "email": {"required": True, "allow_blank": False}}
 
     def create(self, validated_data):
-        if "email" not in validated_data:
-            raise serializers.ValidationError("email field required")
         user = User.objects.create_user(validated_data['username'], validated_data['email'], validated_data['password'])
         return user
 

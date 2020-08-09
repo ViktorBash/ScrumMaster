@@ -3,10 +3,11 @@ from knox.auth import TokenAuthentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import generics, permissions
-from .serializers import BoardCreateSerializer, BoardInfoSerializer
+from .serializers import BoardCreateSerializer, BoardInfoSerializer, SharedUserCreateSerializer
 from django.http import HttpResponse, JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+from rest_framework import exceptions
 
 
 # Create a board, POST request, requires authentication, returns board info
@@ -18,15 +19,11 @@ class BoardCreate(generics.GenericAPIView):
         permissions.IsAuthenticated
     ]
 
-    # POST request part
+    # POST request to create Board
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)  # Check serializer is valid, then save it if it is
         board = serializer.save()
-        if isinstance(board, str):
-            return Response({
-                "board": board
-            })
 
         # Return info about the board using the BoardInfoSerializer
         return Response({
@@ -48,51 +45,43 @@ class BoardInfo(generics.GenericAPIView):
         try:
             board = Board.objects.get(id=pk)
         except Exception as e:
-            # Return Exception as JSON
-            return JsonResponse(str(e), safe=False)
+            # Return 404 error
+            raise exceptions.NotFound
 
-        # Check that the user either owns the board or is a shared user on it
-        # set permission_allowed to true if either the owner or a shared user of the board
-        permission_allowed = False
+        # If either board owner or shared user give board info, otherwise return 404 error that board does not exist
         if board.owner == self.request.user:
-            permission_allowed = True
+            pass
         else:
             try:
                 SharedUser.objects.get(shared_user=self.request.user, board=board)
-                permission_allowed = True
-            except Exception:
-                pass
-
-        if permission_allowed:  # They have access to the board, give the board response
-            # Put the board in the serializer and return it as a JSON response.
-            serializer = BoardInfoSerializer(board, many=False)
-            return JsonResponse(serializer.data)
-        else:  # They don't have permission, deny them
-            return JsonResponse("Permission denied", safe=False)
+            except Exception:  # No shared user or board owner object exists, 404 response back
+                raise exceptions.NotFound
+        serializer = BoardInfoSerializer(board, many=False)
+        return JsonResponse(serializer.data)
 
     def delete(self, request, pk, *args, **kwargs):
         try:
             board = Board.objects.get(id=pk)
-        except Exception as e:
-            return JsonResponse(str(e), safe=False)
+        except Exception:
+            raise exceptions.NotFound
         if self.request.user == board.owner:
             board.delete()
-            return JsonResponse("board deleted", safe=False)
-        else:
-            return Response("Incorrect Credentials")
+            return JsonResponse("", safe=False)  # Return blank 200 response, successfully deleted
+        else:  # Not owner of board, send 404
+            raise exceptions.NotFound
 
     def put(self, request, pk, *args, **kwargs):
         try:
             board = Board.objects.get(id=pk)
-        except Exception as e:
-            return JsonResponse(str(e), safe=False)
+        except Exception:  # 404, doesn't exist
+            return exceptions.NotFound
         if board.owner == self.request.user:
             serializer = BoardInfoSerializer(board, data=request.data)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 return Response(serializer.data)
-        else:
-            return Response("Incorrect Credentials")
+        else:  # Not owner, 404 for security
+            raise exceptions.NotFound
 
 
 # List the boards GET request, shows owned and shared boards
@@ -113,4 +102,19 @@ class BoardList(generics.GenericAPIView):
         # send both the shared and owned boards as JSON back
         return JsonResponse(owned_serializer.data + shared_serializer.data, safe=False)
 
+
+# Create shared user
+class SharedUserCreate(generics.GenericAPIView):
+    serializer_class = SharedUserCreateSerializer
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+
+    def post(self, request, *args, **kwargs):
+        print(request.data)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        shared_user = serializer.save()
+        # return JsonResponse(shared_user, safe=False)
+        return JsonResponse("lol", safe=False)
 

@@ -44,7 +44,7 @@ class BoardInfoSerializer(serializers.ModelSerializer):
 
 
 # Shared User serializer
-# CHECK: if board exists, if user exists, if owner,
+# CHECK: if board exists, if user exists, if owner, and finally if the shared user already exists
 class SharedUserCreateSerializer(serializers.Serializer):
     board_id = serializers.IntegerField()
     shared_user_email = serializers.EmailField()
@@ -52,7 +52,7 @@ class SharedUserCreateSerializer(serializers.Serializer):
     def create(self, validated_data):
         # Check if board exists
         try:
-            board = Board.objects.get(id=validated_data['id'])
+            board = Board.objects.get(id=validated_data['board_id'])
         except Exception:
             raise exceptions.NotFound
 
@@ -70,7 +70,16 @@ class SharedUserCreateSerializer(serializers.Serializer):
         except Exception:
             raise exceptions.NotFound
 
-        # Put it together, create the shared user
+        # See if the shared_user is already made
+        try:
+            check_shared_user = SharedUser.objects.get(board=board, shared_user=user)
+            raise exceptions.ValidationError
+        except exceptions.ValidationError:
+            raise exceptions.ValidationError
+        except Exception:
+            pass
+
+        # Passed all tests, put it together, create the shared user
         shared_user = SharedUser.objects.create(board=board, shared_user=user)
         shared_user.save()
         return shared_user

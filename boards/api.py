@@ -104,7 +104,7 @@ class BoardList(generics.GenericAPIView):
 class SharedUserCreate(generics.GenericAPIView):
     serializer_class = SharedUserCreateSerializer
     permission_classes = [
-        permissions.IsAuthenticateds,
+        permissions.IsAuthenticated,
     ]
 
     def post(self, request, *args, **kwargs):

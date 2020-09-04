@@ -7,7 +7,6 @@ from rest_framework import exceptions
 
 # Board create serializer for POST requests
 class BoardCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         # Only the "title" field will be writable
         model = Board
@@ -97,7 +96,6 @@ class SharedUserCreateSerializer(serializers.Serializer):
 
 # To delete a shared user
 class SharedUserDeleteSerializer(serializers.Serializer):
-
     board_id = serializers.IntegerField()
     shared_user_email = serializers.EmailField()
 
@@ -123,10 +121,57 @@ class SharedUserDeleteSerializer(serializers.Serializer):
         # Passed shared user exists and is board owner checks. Delete the shared user now and return "".
         shared_user.delete()
         return ""
-#
-#
-# # Task serializer
-# class TaskSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Task
-#         fields = "__all__"
+
+
+# Task serializer
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['id', 'board', 'date_created', 'title', 'description', 'progress_status', 'priority']
+        read_only_fields = ['id', 'date_created']
+        extra_kwargs = {
+            "board": {"required": True},
+            "title": {"required": True},
+            "description": {"required": True},
+            "progress_status": {"required": True},
+            "priority": {"required": True},
+        }
+
+    def create(self, validated_data):
+        # Get the user or raise an error
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+        if user is None:
+            raise serializers.ValidationError("Incorrect Credentials")
+
+        # Try to get the board
+        try:
+            board = Board.objects.get(id=validated_data['board'].id)
+        except Exception:
+            raise exceptions.NotFound
+
+        # see if they have access to the board (if they are owner or shared user)
+        allowed = False
+        if user.id is board.owner.id:
+            allowed = True
+        else:
+            try:
+                user = board.shared_users.get(board=board, shared_user=user)
+                allowed = True
+            except Exception as e:
+                raise exceptions.NotFound
+        if allowed is False:
+            raise serializers.ValidationError("Incorrect Credentials")
+
+        # Create the task
+        task = Task(title=validated_data['title'], board=board, description=validated_data['description'],
+                    progress_status=validated_data['progress_status'], owner=user, priority=validated_data['priority'])
+
+        # Try to save the task, then return
+        try:
+            task.save()
+        except Exception as e:
+            raise e
+        return task

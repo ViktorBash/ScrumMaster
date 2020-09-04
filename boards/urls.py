@@ -1,5 +1,5 @@
 from django.urls import path
-from .api import BoardCreate, BoardInfo, BoardList, SharedUserCreate, SharedUserDelete
+from .api import BoardCreate, BoardInfo, BoardList, SharedUserCreate, SharedUserDelete, TaskCreate
 
 urlpatterns = [
     path('api/board/create/', BoardCreate.as_view()),
@@ -7,4 +7,5 @@ urlpatterns = [
     path('api/board/list/', BoardList.as_view()),  # get list of shared boards and owned boards
     path('api/shareduser/create/', SharedUserCreate.as_view()),
     path('api/shareduser/delete/', SharedUserDelete.as_view()),
+    path('api/task/create/', TaskCreate.as_view()),
 ]

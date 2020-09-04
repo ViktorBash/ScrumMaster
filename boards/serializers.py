@@ -82,10 +82,47 @@ class SharedUserCreateSerializer(serializers.Serializer):
         # Passed all tests, put it together, create the shared user
         shared_user = SharedUser.objects.create(board=board, shared_user=user)
         shared_user.save()
-        return shared_user
+        return_info = {
+            "shareduser": {
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+            },
+            "board_id": board.id
+
+        }
+        return return_info
 
 
+# To delete a shared user
+class SharedUserDeleteSerializer(serializers.Serializer):
 
+    board_id = serializers.IntegerField()
+    shared_user_email = serializers.EmailField()
+
+    def create(self, validated_data):
+        # Check if shared_user exists
+        shared_user = None
+        try:
+            print(validated_data)
+            user = User.objects.get(email=validated_data['shared_user_email'])
+            shared_user = SharedUser.objects.get(board_id=validated_data['board_id'], shared_user=user)
+        except Exception as e:
+            raise exceptions.NotFound
+
+        # Check if owner of the board
+        board = Board.objects.get(id=validated_data['board_id'])  # already checked that board exists above
+        owner = None
+        request = self.context.get("request")
+        if request and hasattr(request, 'user'):
+            owner = request.user
+        if owner is None or board.owner != owner:
+            raise exceptions.NotFound
+
+        # Passed shared user exists and is board owner checks. Delete the shared user now and return "".
+        shared_user.delete()
+        return ""
 #
 #
 # # Task serializer

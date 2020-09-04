@@ -1,7 +1,8 @@
 from .models import Board, SharedUser, Task
 from rest_framework.response import Response
 from rest_framework import generics, permissions
-from .serializers import BoardCreateSerializer, BoardInfoSerializer, SharedUserCreateSerializer
+from .serializers import BoardCreateSerializer, BoardInfoSerializer, SharedUserCreateSerializer, \
+    SharedUserDeleteSerializer, TaskSerializer
 from django.http import JsonResponse
 from rest_framework import exceptions
 from rest_framework import status
@@ -104,14 +105,39 @@ class BoardList(generics.GenericAPIView):
 class SharedUserCreate(generics.GenericAPIView):
     serializer_class = SharedUserCreateSerializer
     permission_classes = [
-        permissions.IsAuthenticateds,
+        permissions.IsAuthenticated,
     ]
 
     def post(self, request, *args, **kwargs):
-        print(request.data)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         shared_user = serializer.save()
-        return Response(self.request.data, status=status.HTTP_201_CREATED)
+        return Response(shared_user, status=status.HTTP_201_CREATED)
 
 
+# Delete shared user
+class SharedUserDelete(generics.GenericAPIView):
+    serializer_class = SharedUserDeleteSerializer
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+
+    def delete(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid()
+        shared_user = serializer.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+# Task API View
+class TaskCreate(generics.GenericAPIView):
+    serializer_class = TaskSerializer
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)  # Check serializer is valid, then save it if it is
+        task = serializer.save()
+        return JsonResponse(serializer.data, safe=False)

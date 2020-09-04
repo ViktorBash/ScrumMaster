@@ -1,12 +1,8 @@
 from .models import Board, SharedUser, Task
-from knox.auth import TokenAuthentication
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import generics, permissions
 from .serializers import BoardCreateSerializer, BoardInfoSerializer, SharedUserCreateSerializer
-from django.http import HttpResponse, JsonResponse
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework import serializers
+from django.http import JsonResponse
 from rest_framework import exceptions
 
 

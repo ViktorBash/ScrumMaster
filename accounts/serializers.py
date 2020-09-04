@@ -23,6 +23,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        # Check if there is already user with this email
+        try:  # Try to get an existing user and raise a validation error
+            already_user = User.objects.get(email=validated_data['email'])
+            error_dict = {"email": ['This email is already linked to an account']}
+            raise serializers.ValidationError(error_dict)
+        except serializers.ValidationError as e:  # pass up the validation error and raise it
+            raise e
+        except Exception as e:  # if there is no user this exception will cover it instead
+            pass
+
+        # Finally create object since everything is validated
         user = User.objects.create_user(validated_data['username'], validated_data['email'], validated_data['password'])
         user.first_name = validated_data['first_name']
         user.last_name = validated_data['last_name']

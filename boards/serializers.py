@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Board, SharedUser, Task
 from django.db.utils import IntegrityError
 from django.contrib.auth.models import User
+from rest_framework import exceptions
 
 
 # Board create serializer for POST requests
@@ -43,46 +44,38 @@ class BoardInfoSerializer(serializers.ModelSerializer):
 
 
 # Shared User serializer
-# class SharedUserCreateSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = SharedUser
-#         fields = "__all__"  # board and shared user (both foreign key objects)
-#
-#     def create(self, validated_data):
-#         owner = None
-#         request = self.context.get("request")
-#         if request and hasattr(request, "user"):
-#             owner = request.user
-#         if owner is None:
-#             raise serializers.ValidationError("Incorrect Credentials")
-#         try:
-#             board = Board.objects.get(id=validated_data['id'])
-#         except Exception as e:
-#             return "Board doesn't exist"
-#         if board.owner != owner:
-#             raise serializers.ValidationError("Incorrect Credentials")
-#
-#         # at this point, the board exists and the owner is the board owner
-#         if 'email' in validated_data:
-#             try:
-#                 user = User.objects.get(email=validated_data['email'])
-#             except Exception as e:
-#                 return str(e)
-#         elif 'username' in validated_data:
-#             try:
-#                 user = User.objects.get(username=validated_data['username'])
-#             except Exception as e:
-#                 return str(e)
-#         else:
-#             return "provide username or email"
-#         try:
-#             shared_user = SharedUser.objects.create(owner=owner, shared_user=user)
-#             shared_user.save()
-#             return shared_user
-#         except Exception as e:
-#             raise Exception
-#
-#
+# CHECK: if board exists, if user exists, if owner,
+class SharedUserCreateSerializer(serializers.Serializer):
+    board_id = serializers.IntegerField()
+    shared_user_email = serializers.EmailField()
+
+    def create(self, validated_data):
+        # Check if board exists
+        try:
+            board = Board.objects.get(id=validated_data['id'])
+        except Exception:
+            raise exceptions.NotFound
+
+        # Check if owner, and if owner of board
+        owner = None
+        request = self.context.get("request")
+        if request and hasattr(request, 'user'):
+            owner = request.user
+        if owner is None or board.owner != owner:
+            raise exceptions.NotFound
+
+        # Check if shared_user
+        try:
+            user = User.objects.get(email=validated_data['shared_user_email'])
+        except Exception:
+            raise exceptions.NotFound
+
+        # Put it together, create the shared user
+        shared_user = SharedUser.objects.create(board=board, shared_user=user)
+        shared_user.save()
+        return shared_user
+
+
 
 #
 #

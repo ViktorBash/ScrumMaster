@@ -4,6 +4,7 @@ from rest_framework import generics, permissions
 from .serializers import BoardCreateSerializer, BoardInfoSerializer, SharedUserCreateSerializer
 from django.http import JsonResponse
 from rest_framework import exceptions
+from rest_framework import status
 
 
 # Create a board, POST request, requires authentication, returns board info
@@ -103,7 +104,7 @@ class BoardList(generics.GenericAPIView):
 class SharedUserCreate(generics.GenericAPIView):
     serializer_class = SharedUserCreateSerializer
     permission_classes = [
-        permissions.IsAuthenticated,
+        permissions.IsAuthenticateds,
     ]
 
     def post(self, request, *args, **kwargs):
@@ -111,6 +112,6 @@ class SharedUserCreate(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         shared_user = serializer.save()
-        # return JsonResponse(shared_user, safe=False)
-        return JsonResponse("lol", safe=False)
+        return Response(self.request.data, status=status.HTTP_201_CREATED)
+
 

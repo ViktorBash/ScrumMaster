@@ -137,3 +137,6 @@ project_env/
 
 # Node modules
 node_modules/
+
+# to-do file
+todo.txt

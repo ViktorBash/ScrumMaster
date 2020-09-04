@@ -27,6 +27,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ("knox.auth.TokenAuthentication",),
+}
 
 # Application definition
 
@@ -40,6 +43,8 @@ INSTALLED_APPS = [
     'accounts',
     'boards',
     'frontend',
+    'rest_framework',
+    'knox',
 ]
 
 MIDDLEWARE = [

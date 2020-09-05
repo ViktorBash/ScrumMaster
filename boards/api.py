@@ -186,7 +186,7 @@ class TaskInfo(generics.GenericAPIView):
             allowed = True
         else:
             try:
-                shared_user = board.shared_user.get(board=board, shared_user=self.request.user)
+                shared_user = board.shared_users.get(board=board, shared_user=self.request.user)
                 allowed = True
             except Exception:
                 raise exceptions.NotFound
@@ -198,17 +198,28 @@ class TaskInfo(generics.GenericAPIView):
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return JsonResponse(serializer.data, safe=False)
-        # try:
-        #     board = Board.objects.get(id=pk)
-        # except Exception:  # 404, doesn't exist
-        #     return exceptions.NotFound
-        # if board.owner == self.request.user:
-        #     serializer = BoardInfoSerializer(board, data=request.data)
-        #     if serializer.is_valid(raise_exception=True):
-        #         serializer.save()
-        #         return Response(serializer.data)
-        # else:  # Not owner, 404 for security
-        #     raise exceptions.NotFound
 
     def delete(self, request, pk, *args, **kwargs):
-        pass
+        try:
+            task = Task.objects.get(id=pk)
+        except Exception:
+            return exceptions.NotFound
+
+        allowed = False
+        board = task.board
+
+        if board.owner == self.request.user:
+            allowed = True
+        else:
+            try:
+                shared_user = board.shared_users.get(board=board, shared_user=self.request.user)
+                allowed = True
+            except Exception:
+                raise exceptions.NotFound
+
+        if not allowed:
+            raise exceptions.NotFound
+
+        task.delete()
+        return Response(status=status.HTTP_200_OK)
+

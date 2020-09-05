@@ -129,7 +129,7 @@ class SharedUserDelete(generics.GenericAPIView):
         return Response(status=status.HTTP_200_OK)
 
 
-# Task API View
+# Task Create API View
 class TaskCreate(generics.GenericAPIView):
     serializer_class = TaskSerializer
     permission_classes = [
@@ -141,3 +141,74 @@ class TaskCreate(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)  # Check serializer is valid, then save it if it is
         task = serializer.save()
         return JsonResponse(serializer.data, safe=False)
+
+
+# Task info (get, update, delete) API view
+class TaskInfo(generics.GenericAPIView):
+    serializer_class = TaskSerializer
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+
+    def get(self, request, pk, *args, **kwargs):
+        try:
+            task = Task.objects.get(id=pk)
+        except Exception:
+            raise exceptions.NotFound
+
+        allowed = False
+        board = task.board
+        if self.request.user == board.owner:
+            allowed = True
+        else:
+            try:
+                shared_user = board.shared_users.get(board=board, shared_user=self.request.user)
+                allowed = True
+            except Exception:
+                raise exceptions.NotFound
+
+        if not allowed:
+            return exceptions.NotFound
+        if allowed:
+            serializer = TaskSerializer(task, many=False)
+            return JsonResponse(serializer.data, safe=False)
+
+    def put(self, request, pk, *args, **kwargs):
+        try:
+            task = Task.objects.get(id=pk)
+        except Exception:
+            return exceptions.NotFound
+
+        allowed = False
+        board = task.board
+
+        if board.owner == self.request.user:
+            allowed = True
+        else:
+            try:
+                shared_user = board.shared_user.get(board=board, shared_user=self.request.user)
+                allowed = True
+            except Exception:
+                raise exceptions.NotFound
+
+        if not allowed:
+            raise exceptions.NotFound
+
+        serializer = TaskSerializer(task, data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return JsonResponse(serializer.data, safe=False)
+        # try:
+        #     board = Board.objects.get(id=pk)
+        # except Exception:  # 404, doesn't exist
+        #     return exceptions.NotFound
+        # if board.owner == self.request.user:
+        #     serializer = BoardInfoSerializer(board, data=request.data)
+        #     if serializer.is_valid(raise_exception=True):
+        #         serializer.save()
+        #         return Response(serializer.data)
+        # else:  # Not owner, 404 for security
+        #     raise exceptions.NotFound
+
+    def delete(self, request, pk, *args, **kwargs):
+        pass

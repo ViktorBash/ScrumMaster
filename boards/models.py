@@ -41,7 +41,7 @@ class SharedUser(models.Model):
 class Task(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE)  # board the task belongs to
     date_created = models.DateTimeField(auto_now_add=True)  # when created
-    title = models.CharField(max_length=100, unique=True)  # title, unique so no copies
+    title = models.CharField(max_length=100, unique=True, default="Title")  # title, unique so no copies
     description = models.TextField(default="")  # description, can be left blank aka ""
     progress_status = models.CharField(max_length=50, default="WORKING")  # the progress of the task, ex:
     # STUCK [Red], WORKING [Blue], DONE [Green], ARCHIVED [Greyed out], FUTURE [another color]

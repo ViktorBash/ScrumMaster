@@ -130,11 +130,11 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = ['id', 'board', 'date_created', 'title', 'description', 'progress_status', 'priority']
         read_only_fields = ['id', 'date_created']
         extra_kwargs = {
-            "board": {"required": True},
-            "title": {"required": True},
-            "description": {"required": True},
-            "progress_status": {"required": True},
-            "priority": {"required": True},
+            # "board": {"required": True},
+            # "title": {"required": True},
+            # "description": {"required": True},
+            # "progress_status": {"required": True},
+            # "priority": {"required": True},
         }
 
     def create(self, validated_data):
@@ -166,9 +166,14 @@ class TaskSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Incorrect Credentials")
 
         # Create the task
-        task = Task(title=validated_data['title'], board=board, description=validated_data['description'],
-                    progress_status=validated_data['progress_status'], owner=user, priority=validated_data['priority'])
 
+        task = Task(title=validated_data['title'], board=board, owner=user)
+        if "description" in validated_data:
+            task.description = validated_data['description']
+        if "progress_status" in validated_data:
+            task.progress_status = validated_data['progress_status']
+        if "priority" in validated_data:
+            task.priority = validated_data['priority']
         # Try to save the task, then return
         try:
             task.save()

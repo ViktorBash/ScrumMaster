@@ -54,8 +54,15 @@ class BoardInfo(generics.GenericAPIView):
                 SharedUser.objects.get(shared_user=self.request.user, board=board)
             except Exception:  # No shared user or board owner object exists, 404 response back
                 raise exceptions.NotFound
+
+        tasklist = board.tasks.filter(board=board)
+        task_serializer = TaskSerializer(tasklist, many=True)
         serializer = BoardInfoSerializer(board, many=False)
-        return JsonResponse(serializer.data)
+        response = {
+            "board_info": serializer.data,
+            "board_tasks": task_serializer.data,
+        }
+        return JsonResponse(response, safe=False)
 
     def delete(self, request, pk, *args, **kwargs):
         try:

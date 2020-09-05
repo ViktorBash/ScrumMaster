@@ -39,7 +39,7 @@ class SharedUser(models.Model):
 
 # many-to-one, many tasks in one board
 class Task(models.Model):
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)  # board the task belongs to
+    board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name="tasks")  # board the task belongs to
     date_created = models.DateTimeField(auto_now_add=True)  # when created
     title = models.CharField(max_length=100, unique=True, default="Title")  # title, unique so no copies
     description = models.TextField(default="")  # description, can be left blank aka ""

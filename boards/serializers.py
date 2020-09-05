@@ -180,3 +180,36 @@ class TaskSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise e
         return task
+
+
+# Task list serializer
+class TaskListSerializer(serializers.Serializer):
+    board_id = serializers.IntegerField()
+
+    def get(self, validated_data):
+        # Get the user or raise an error
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+        if user is None:
+            raise serializers.ValidationError("Incorrect Credentials")
+
+        try:
+            board = Board.objects.get(id=board_id)
+        except Exception:
+            raise exceptions.NotFound
+
+        allowed = False
+        if board.owner == user:
+            allowed = True
+        else:
+            try:
+                board.shared_users.get(shared_user=user)
+                allowed = True
+            except Exception:
+                raise exceptions.NotFound
+
+        if not allowed:
+            raise exceptions.NotFound
+

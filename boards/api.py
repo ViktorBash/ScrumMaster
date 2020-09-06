@@ -2,16 +2,30 @@ from .models import Board, SharedUser, Task
 from rest_framework.response import Response
 from rest_framework import generics, permissions
 from .serializers import BoardCreateSerializer, BoardInfoSerializer, SharedUserCreateSerializer, \
-    SharedUserDeleteSerializer, TaskSerializer
+    SharedUserDeleteSerializer, TaskSerializer, SharedUserInfoSerializer
 from django.http import JsonResponse
 from rest_framework import exceptions
 from rest_framework import status
+
+"""
+All api views required permissions.IsAuthenticated to ensure there is a user sending a request.
+Otherwise, serializers and other pieces of the code will not function correctly.
+Most error responses are exceptions.NotFound (aka 404). Even if an object exists but the user is not allowed to view it,
+a 404 is still given for security purposes.
+Most API views have multiple checks (or their serializers do), in order to check that the object exists, they are either
+an owner os have access to the object, etc.
+
+
+One object can have up to 3 different api views:
+ObjectCreate --> API view for POST
+ObjectInfo --> API view for GET, PUT and DELETE
+ObjectList --> API view for GET request for a list of the objects
+"""
 
 
 # Create a board, POST request, requires authentication, returns board info
 class BoardCreate(generics.GenericAPIView):
     serializer_class = BoardCreateSerializer
-    # authentication_classes = (TokenAuthentication,)
     # The request must be authenticated to access the API
     permission_classes = [
         permissions.IsAuthenticated
@@ -29,7 +43,7 @@ class BoardCreate(generics.GenericAPIView):
         })
 
 
-# Gives info about a board when given ID
+# Gives board info and related tasks when given ID
 class BoardInfo(generics.GenericAPIView):
     serializer_class = BoardInfoSerializer
 
@@ -42,8 +56,7 @@ class BoardInfo(generics.GenericAPIView):
         # Try to get the board based on the ID and raise error if does not exist
         try:
             board = Board.objects.get(id=pk)
-        except Exception as e:
-            # Return 404 error
+        except Exception:
             raise exceptions.NotFound
 
         # If either board owner or shared user give board info, otherwise return 404 error that board does not exist
@@ -55,12 +68,27 @@ class BoardInfo(generics.GenericAPIView):
             except Exception:  # No shared user or board owner object exists, 404 response back
                 raise exceptions.NotFound
 
-        tasklist = board.tasks.filter(board=board)
-        task_serializer = TaskSerializer(tasklist, many=True)
-        serializer = BoardInfoSerializer(board, many=False)
+        tasks = board.tasks.filter(board=board)
+        task_serializer = TaskSerializer(tasks, many=True)
+
+        board_serializer = BoardInfoSerializer(board, many=False)
+
+        shared_users = board.shared_users.filter(board=board)
+
+        # Complicated list comprehension. A dictionary containing shared user information
+        # is put into the list for each shared user that exists.
+        shared_user_response = [{
+            "username": shared_user.shared_user.username,
+            "first_name": shared_user.shared_user.first_name,
+            "last_name": shared_user.shared_user.last_name,
+            "email": shared_user.shared_user.email,
+            } for shared_user in shared_users]
+
+        # For less API calls we just include everything related to the board
         response = {
-            "board_info": serializer.data,
-            "board_tasks": task_serializer.data,
+            "board": board_serializer.data,
+            "tasks": task_serializer.data,
+            "shared_users": shared_user_response
         }
         return JsonResponse(response, safe=False)
 
@@ -71,7 +99,7 @@ class BoardInfo(generics.GenericAPIView):
             raise exceptions.NotFound
         if self.request.user == board.owner:
             board.delete()
-            return JsonResponse("", safe=False)  # Return blank 200 response, successfully deleted
+            return Response(status=status.HTTP_200_OK)  # Return blank 200 response, successfully deleted
         else:  # Not owner of board, send 404
             raise exceptions.NotFound
 
@@ -79,12 +107,12 @@ class BoardInfo(generics.GenericAPIView):
         try:
             board = Board.objects.get(id=pk)
         except Exception:  # 404, doesn't exist
-            return exceptions.NotFound
+            raise exceptions.NotFound
         if board.owner == self.request.user:
             serializer = BoardInfoSerializer(board, data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                return Response(serializer.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
         else:  # Not owner, 404 for security
             raise exceptions.NotFound
 
@@ -132,7 +160,7 @@ class SharedUserDelete(generics.GenericAPIView):
     def delete(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid()
-        shared_user = serializer.save()
+        serializer.save()
         return Response(status=status.HTTP_200_OK)
 
 
@@ -147,7 +175,24 @@ class TaskCreate(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)  # Check serializer is valid, then save it if it is
         task = serializer.save()
-        return JsonResponse(serializer.data, safe=False)
+        return_response = {
+            "task": {
+                "id": task.id,
+                "board": task.board.id,
+                "date_created": task.date_created,
+                "title": task.title,
+                "description": task.description,
+                "progress_status": task.progress_status,
+                "priority": task.priority,
+                "owner": {
+                    "username": task.owner.username,
+                    "first_name": task.owner.first_name,
+                    "last_name": task.owner.last_name,
+                    "email": task.owner.email,
+                }
+            }
+        }
+        return JsonResponse(return_response, safe=False)
 
 
 # Task info (get, update, delete) API view
@@ -176,15 +221,31 @@ class TaskInfo(generics.GenericAPIView):
 
         if not allowed:
             return exceptions.NotFound
-        if allowed:
-            serializer = TaskSerializer(task, many=False)
-            return JsonResponse(serializer.data, safe=False)
+
+        return_response = {
+            "task": {
+                "id": task.id,
+                "board": task.board.id,
+                "date_created": task.date_created,
+                "title": task.title,
+                "description": task.description,
+                "progress_status": task.progress_status,
+                "priority": task.priority,
+                "owner": {
+                    "username": task.owner.username,
+                    "first_name": task.owner.first_name,
+                    "last_name": task.owner.last_name,
+                    "email": task.owner.email,
+                }
+            }
+        }
+        return JsonResponse(return_response, safe=False)
 
     def put(self, request, pk, *args, **kwargs):
         try:
             task = Task.objects.get(id=pk)
         except Exception:
-            return exceptions.NotFound
+            raise exceptions.NotFound
 
         allowed = False
         board = task.board
@@ -202,15 +263,32 @@ class TaskInfo(generics.GenericAPIView):
             raise exceptions.NotFound
 
         serializer = TaskSerializer(task, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return JsonResponse(serializer.data, safe=False)
+        serializer.is_valid(raise_exception=True)
+        task = serializer.save()
+        return_response = {
+            "task": {
+                "id": task.id,
+                "board": task.board.id,
+                "date_created": task.date_created,
+                "title": task.title,
+                "description": task.description,
+                "progress_status": task.progress_status,
+                "priority": task.priority,
+                "owner": {
+                    "username": task.owner.username,
+                    "first_name": task.owner.first_name,
+                    "last_name": task.owner.last_name,
+                    "email": task.owner.email,
+                }
+            }
+        }
+        return JsonResponse(return_response, safe=False)
 
     def delete(self, request, pk, *args, **kwargs):
         try:
             task = Task.objects.get(id=pk)
         except Exception:
-            return exceptions.NotFound
+            raise exceptions.NotFound
 
         allowed = False
         board = task.board

@@ -46,7 +46,8 @@ class Task(models.Model):
     progress_status = models.CharField(max_length=50, default="WORKING")  # the progress of the task, ex:
     # STUCK [Red], WORKING [Blue], DONE [Green], ARCHIVED [Greyed out], FUTURE [another color]
 
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)  # who is in charge/owns the task, transferable/updatable
+    # who is in charge/owns the task, transferable/updatable, can be null
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     # priority of thing, from 1 --> 5
     priority = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(5)])
 

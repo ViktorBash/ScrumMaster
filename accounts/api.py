@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from knox.models import AuthToken
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
@@ -18,7 +18,7 @@ class RegisterAPI(generics.GenericAPIView):
             # using user serializer to get the ID, username and email for our response
             "user": UserSerializer(user, context=self.get_serializer_context()).data,
             "token": AuthToken.objects.create(user)[1],  # Create token for user to use
-        })
+        }, status=status.HTTP_201_CREATED)
 
 
 # Login API, post request

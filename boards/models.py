@@ -20,6 +20,16 @@ class Board(models.Model):
     def __str__(self):
         return self.title
 
+    def __repr__(self):
+        return {
+            "object": "BOARD",
+            "title": self.title,
+            "id": self.id,
+            "owner_username": self.owner.username,
+            "owner_id": self.owner_id,
+            "created_at": self.created_at
+        }
+
 
 # many-to-one, users who are shared to a specific board
 class SharedUser(models.Model):
@@ -28,7 +38,17 @@ class SharedUser(models.Model):
     shared_user = models.ForeignKey(User, related_name="shared_boards", on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"SHARED USER OBJECT, board: {self.board}, shared user: {self.shared_user}"
+        return f"SHARED USER OBJECT. Board: \"{self.board}\", Shared user: \"{self.shared_user}\""
+
+    def __repr__(self):
+        return {
+            "object": "SHARED USER",
+            "id": self.id,
+            "board": self.board,
+            "board_id": self.board_id,
+            "shared_user": self.shared_user,
+            "shared_user_id": self.shared_user_id,
+        }
 
     # this ensures there can be no duplicate shared user models (ie, you can't be shared to a board twice)
     def validate_unique(self, exclude=None, *args, **kwargs):
@@ -52,4 +72,18 @@ class Task(models.Model):
     priority = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(5)])
 
     def __str__(self):
-        return f"TASK, board: {self.board.title}, task: {self.title}"
+        return f"TASK OBJECT. Board: \"{self.board.title}\", task: \"{self.title}\""
+
+    def __repr__(self):
+        return {
+            "object": "TASK",
+            "id": self.id,
+            "board": self.board,
+            "board_id": self.board_id,
+            "title": self.title,
+            "description": self.description,
+            "progress_status": self.progress_status,
+            "date_created": self.date_created,
+            "owner": self.owner,
+            "priority": self.priority
+        }

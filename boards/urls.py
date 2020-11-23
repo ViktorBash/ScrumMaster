@@ -8,5 +8,5 @@ urlpatterns = [
     path('api/shareduser/create/', SharedUserCreate.as_view()),
     path('api/shareduser/delete/', SharedUserDelete.as_view()),
     path('api/task/create/', TaskCreate.as_view()),
-    path('api/task/<int:pk>/', TaskInfo.as_view()),
+    # path('api/task/<int:pk>/', TaskInfo.as_view()),
 ]

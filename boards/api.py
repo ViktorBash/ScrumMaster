@@ -2,7 +2,7 @@ from .models import Board, SharedUser, Task
 from rest_framework.response import Response
 from rest_framework import generics, permissions
 from .serializers import BoardCreateSerializer, BoardInfoSerializer, SharedUserCreateSerializer, \
-    SharedUserDeleteSerializer, TaskSerializer, SharedUserInfoSerializer
+    SharedUserDeleteSerializer, TaskSerializer, BoardUpdateSerializer, BoardListSerializer
 from django.http import JsonResponse
 from rest_framework import exceptions
 from rest_framework import status
@@ -34,13 +34,13 @@ class BoardCreate(generics.GenericAPIView):
     # POST request to create Board
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)  # Check serializer is valid, then save it if it is
+        serializer.is_valid(raise_exception=True)  # Check serializer is valid, then save the board if it is
         board = serializer.save()
 
         # Return info about the board using the BoardInfoSerializer
-        return Response({
-            "board": BoardInfoSerializer(board, context=self.get_serializer_context()).data
-        })
+        return JsonResponse(
+            BoardInfoSerializer(board.id).data
+        )
 
 
 # Gives board info and related tasks when given ID
@@ -68,29 +68,8 @@ class BoardInfo(generics.GenericAPIView):
             except Exception:  # No shared user or board owner object exists, 404 response back
                 raise exceptions.NotFound
 
-        tasks = board.tasks.filter(board=board)
-        task_serializer = TaskSerializer(tasks, many=True)
-
-        board_serializer = BoardInfoSerializer(board, many=False)
-
-        shared_users = board.shared_users.filter(board=board)
-
-        # Complicated list comprehension. A dictionary containing shared user information
-        # is put into the list for each shared user that exists.
-        shared_user_response = [{
-            "username": shared_user.shared_user.username,
-            "first_name": shared_user.shared_user.first_name,
-            "last_name": shared_user.shared_user.last_name,
-            "email": shared_user.shared_user.email,
-            } for shared_user in shared_users]
-
-        # For less API calls we just include everything related to the board
-        response = {
-            "board": board_serializer.data,
-            "tasks": task_serializer.data,
-            "shared_users": shared_user_response
-        }
-        return JsonResponse(response, safe=False)
+        board_serializer = BoardInfoSerializer(pk, many=False)
+        return JsonResponse(board_serializer.data)
 
     def delete(self, request, pk, *args, **kwargs):
         try:
@@ -108,32 +87,28 @@ class BoardInfo(generics.GenericAPIView):
             board = Board.objects.get(id=pk)
         except Exception:  # 404, doesn't exist
             raise exceptions.NotFound
+
         if board.owner == self.request.user:
-            serializer = BoardInfoSerializer(board, data=request.data)
+            serializer = BoardUpdateSerializer(board, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         else:  # Not owner, 404 for security
             raise exceptions.NotFound
 
 
-# List the boards GET request, shows owned and shared boards
+# List the boards, GET request, shows owned and shared boards
 class BoardList(generics.GenericAPIView):
-    serializer_class = BoardInfoSerializer
-    permission_classes = [  # Have to be authenticated
+    serializer_class = BoardListSerializer
+    permission_classes = [
         permissions.IsAuthenticated,
     ]
 
     def get(self, request, *args, **kwargs):
-        owned_boards = self.request.user.board.all()  # Get all of the boards the user owns
-        shared_user_objects = self.request.user.shared_boards.all()  # get all of the shared user objects that belong to
-        # the user
-        # this comprehension turns the shared user objects into a list of the boards the user is shared to
-        shared_boards_list = [shared_user_object.board for shared_user_object in shared_user_objects]
-        owned_serializer = BoardInfoSerializer(owned_boards, many=True)  # serialize the boards owned
-        shared_serializer = BoardInfoSerializer(shared_boards_list, many=True)  # serialize the boards shared to
-        # send both the shared and owned boards as JSON back
-        return JsonResponse(owned_serializer.data + shared_serializer.data, safe=False)
+        # Get the user id, put it into the serializer. Then return the serializer data.
+        user_id = self.request.user.id
+        serializer = BoardListSerializer(user_id)
+        return JsonResponse(serializer.data)
 
 
 # Create shared user
@@ -195,51 +170,52 @@ class TaskCreate(generics.GenericAPIView):
         return JsonResponse(return_response, safe=False)
 
 
-# Task info (get, update, delete) API view
+# Task info (update, delete) API view
 class TaskInfo(generics.GenericAPIView):
     serializer_class = TaskSerializer
     permission_classes = [
         permissions.IsAuthenticated,
     ]
 
-    def get(self, request, pk, *args, **kwargs):
-        try:
-            task = Task.objects.get(id=pk)
-        except Exception:
-            raise exceptions.NotFound
-
-        allowed = False
-        board = task.board
-        if self.request.user == board.owner:
-            allowed = True
-        else:
-            try:
-                shared_user = board.shared_users.get(board=board, shared_user=self.request.user)
-                allowed = True
-            except Exception:
-                raise exceptions.NotFound
-
-        if not allowed:
-            return exceptions.NotFound
-
-        return_response = {
-            "task": {
-                "id": task.id,
-                "board": task.board.id,
-                "date_created": task.date_created,
-                "title": task.title,
-                "description": task.description,
-                "progress_status": task.progress_status,
-                "priority": task.priority,
-                "owner": {
-                    "username": task.owner.username,
-                    "first_name": task.owner.first_name,
-                    "last_name": task.owner.last_name,
-                    "email": task.owner.email,
-                }
-            }
-        }
-        return JsonResponse(return_response, safe=False)
+    # TaskInfo GET request API endpoint removed (just use BoardInfo for data on the board and accompanying Tasks)
+    # def get(self, request, pk, *args, **kwargs):
+    #     try:
+    #         task = Task.objects.get(id=pk)
+    #     except Exception:
+    #         raise exceptions.NotFound
+    #
+    #     allowed = False
+    #     board = task.board
+    #     if self.request.user == board.owner:
+    #         allowed = True
+    #     else:
+    #         try:
+    #             shared_user = board.shared_users.get(board=board, shared_user=self.request.user)
+    #             allowed = True
+    #         except Exception:
+    #             raise exceptions.NotFound
+    #
+    #     if not allowed:
+    #         return exceptions.NotFound
+    #
+    #     return_response = {
+    #         "task": {
+    #             "id": task.id,
+    #             "board": task.board.id,
+    #             "date_created": task.date_created,
+    #             "title": task.title,
+    #             "description": task.description,
+    #             "progress_status": task.progress_status,
+    #             "priority": task.priority,
+    #             "owner": {
+    #                 "username": task.owner.username,
+    #                 "first_name": task.owner.first_name,
+    #                 "last_name": task.owner.last_name,
+    #                 "email": task.owner.email,
+    #             }
+    #         }
+    #     }
+    #     return JsonResponse(return_response, safe=False)
 
     def put(self, request, pk, *args, **kwargs):
         try:

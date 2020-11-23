@@ -40,12 +40,141 @@ class BoardCreateSerializer(serializers.ModelSerializer):
         return board  # Return board object if save is successful
 
 
-# Serializer for GET, PUT and DELETE requests for board object.
-class BoardInfoSerializer(serializers.ModelSerializer):
+# Board update serializer for PUT requests
+class BoardUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = ['id', 'title', 'owner', 'created_at']
         read_only_fields = ['id', 'owner', 'created_at']  # Read only, title is only thing that can be updated
+
+
+# Board Info serializer. Takes in the ID of the board.
+# For to_representation(), it will return all of the board info (board, owner, tasks, shared_users)
+class BoardInfoSerializer(serializers.Serializer):
+    board_id = serializers.IntegerField()  # Only input is the ID of the board
+
+    # For API response, returns the board, owner, tasks and shared_users in a dictionary.
+    def to_representation(self, instance):
+        board = Board.objects.get(id=instance)
+
+        owner_info = {
+            "id": board.owner_id,
+            "username": board.owner.username,
+            "first_name": board.owner.first_name,
+            "last_name": board.owner.last_name,
+            "email": board.owner.email,
+        }
+
+        # Put the owner info inside the board info
+        board_info = {
+            "id": board.id,
+            "title": board.title,
+            "owner": owner_info,
+        }
+
+        # Get tasks and put them into a list
+        tasks = Task.objects.all().filter(board_id=instance)
+
+        task_info = []
+
+        if tasks:
+            for task in tasks:
+                task_dict = {
+                    "id": task.id,
+                    "date_created": task.date_created,
+                    "title": task.title,
+                    "description": task.description,
+                    "progress_status": task.progress_status,
+                    "priority": task.priority,
+                    "owner": {
+                        "id": task.owner_id,
+                        "username": task.owner.username,
+                        "first_name": task.owner.first_name,
+                        "last_name": task.owner.last_name,
+                        "email": task.owner.email,
+                    }
+                }
+                task_info.append(task_dict)
+
+        # Get shared users
+        shared_users = SharedUser.objects.all().filter(board_id=instance)
+        shared_user_info = []
+        if shared_users:
+            for shared_user in shared_users:
+                shared_user_dict = {
+                    "id": shared_user.id,
+                    "username": shared_user.shared_user.username,
+                    "first_name": shared_user.shared_user.first_name,
+                    "last_name": shared_user.shared_user.last_name,
+                    "email": shared_user.shared_user.email,
+                }
+                shared_user_info.append(shared_user_dict)
+
+        # Compile all of the info and return it as a dictionary
+        return_info = {
+            "board": board_info, # This is also where the owner info resides
+            "tasks": task_info,
+            "shared_users": shared_user_info,
+        }
+        return return_info
+
+
+class BoardListSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()  # Only parameter we take in is user id
+
+    # Used for returning a JSON response with all of the boards
+    def to_representation(self, instance):
+        # Find boards owned by user, then put them into a list with proper info
+        owned_boards = Board.objects.all().filter(owner_id=instance)
+        owned_boards_list = []
+
+        if owned_boards:
+            # Since the owner info is the same, we will only query for it once at the beginning and then just use
+            # the data multiple times in order to save database queries.
+            owner_info_dict = {
+                "id": owned_boards[0].owner.id,
+                "username": owned_boards[0].owner.username,
+                "first_name": owned_boards[0].owner.first_name,
+                "last_name": owned_boards[0].owner.last_name,
+                "email": owned_boards[0].owner.email,
+            }
+
+            for owned_board in owned_boards:
+                owner_board_dict = {
+                    "id": owned_board.id,
+                    "title": owned_board.title,
+                    "owner": owner_info_dict,
+                }
+                # Add the info of the board to the owned_boards_list
+                owned_boards_list.append(owner_board_dict)
+
+        # Get the boards the user has been shared to, (aka for each shared user object get shared_user.board)
+        shared_boards_list = []
+        shared_users = SharedUser.objects.all().filter(shared_user_id=instance)
+        if shared_users:
+            shared_boards = [shared_user.board for shared_user in shared_users]
+            # Go through and store every board in the list
+            for shared_board in shared_boards:
+                owner_info_dict = {
+                    "id": shared_board.owner_id,
+                    "username": shared_board.owner.username,
+                    "first_name": shared_board.owner.first_name,
+                    "last_name": shared_board.owner.last_name,
+                    "email": shared_board.owner.email,
+                }
+                shared_board_dict = {
+                    "id": shared_board.id,
+                    "title": shared_board.title,
+                    "owner": owner_info_dict,
+                }
+                shared_boards_list.append(shared_board_dict)
+
+        # Return the owned boards and shared boards as dict which will become JSON response
+        return_info = {
+            "owned_boards": owned_boards_list,
+            "shared_boards": shared_boards_list,
+        }
+        return return_info
 
 
 # Shared User serializer for POST (create)
@@ -99,13 +228,13 @@ class SharedUserCreateSerializer(serializers.Serializer):
         }
         return return_info
 
-
-# For GET requests
-class SharedUserInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SharedUser
-        fields = ['board', 'shared_user']
-        read_only_fields = ['board', 'shared_user']
+# Not needed at the moment
+# # For GET requests
+# class SharedUserInfoSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = SharedUser
+#         fields = ['board', 'shared_user']
+#         read_only_fields = ['board', 'shared_user']
 
 
 # To delete a shared user

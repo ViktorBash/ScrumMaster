@@ -112,7 +112,7 @@ class BoardInfoSerializer(serializers.Serializer):
 
         # Compile all of the info and return it as a dictionary
         return_info = {
-            "board": board_info, # This is also where the owner info resides
+            "board": board_info,  # This is also where the owner info resides
             "tasks": task_info,
             "shared_users": shared_user_info,
         }

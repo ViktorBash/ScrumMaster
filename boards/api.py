@@ -39,7 +39,7 @@ class BoardCreate(generics.GenericAPIView):
 
         # Return info about the board using the BoardInfoSerializer
         return JsonResponse(
-            BoardInfoSerializer(board.id).data
+            BoardInfoSerializer(board.id).data, status=status.HTTP_201_CREATED
         )
 
 

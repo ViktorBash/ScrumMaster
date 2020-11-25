@@ -70,6 +70,7 @@ class BoardInfoSerializer(serializers.Serializer):
             "id": board.id,
             "title": board.title,
             "owner": owner_info,
+            "url": board.url,
         }
 
         # Get tasks and put them into a list
@@ -144,6 +145,7 @@ class BoardListSerializer(serializers.Serializer):
                     "id": owned_board.id,
                     "title": owned_board.title,
                     "owner": owner_info_dict,
+                    "url": owned_board.url,
                 }
                 # Add the info of the board to the owned_boards_list
                 owned_boards_list.append(owner_board_dict)
@@ -166,6 +168,7 @@ class BoardListSerializer(serializers.Serializer):
                     "id": shared_board.id,
                     "title": shared_board.title,
                     "owner": owner_info_dict,
+                    "url": shared_board.url,
                 }
                 shared_boards_list.append(shared_board_dict)
 

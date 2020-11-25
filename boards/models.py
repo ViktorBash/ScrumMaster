@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
+import uuid
 
 # TODO: make shared_user have attribute of can_create, can_edit, etc which is set by the owner of a board when they
 #  join a board. Also, generally give the owner of a board more power. Also, is_viewer for people who are write only
@@ -13,6 +14,7 @@ class Board(models.Model):
     title = models.CharField(max_length=100)  # title of the board
     owner = models.ForeignKey(User, related_name="board", on_delete=models.CASCADE)  # who owns/creates the board
     created_at = models.DateTimeField(auto_now_add=True)  # when it was created
+    url = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     class Meta:
         unique_together = ['title', 'owner']
@@ -27,7 +29,8 @@ class Board(models.Model):
             "id": self.id,
             "owner_username": self.owner.username,
             "owner_id": self.owner_id,
-            "created_at": self.created_at
+            "created_at": self.created_at,
+            "UUID": self.url,
         }
 
 

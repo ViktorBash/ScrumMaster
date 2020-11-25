@@ -2,7 +2,7 @@ from .models import Board, SharedUser, Task
 from rest_framework.response import Response
 from rest_framework import generics, permissions
 from .serializers import BoardCreateSerializer, BoardInfoSerializer, SharedUserCreateSerializer, \
-    SharedUserDeleteSerializer, TaskSerializer, BoardUpdateSerializer, BoardListSerializer
+    SharedUserDeleteSerializer, TaskSerializer, BoardUpdateSerializer, BoardListSerializer, BoardInfoUrlSerializer
 from django.http import JsonResponse
 from rest_framework import exceptions
 from rest_framework import status
@@ -52,10 +52,10 @@ class BoardInfo(generics.GenericAPIView):
     ]
 
     # GET request with PK/ID passed in the URL
-    def get(self, request, pk, *args, **kwargs):
+    def get(self, request, url, *args, **kwargs):
         # Try to get the board based on the ID and raise error if does not exist
         try:
-            board = Board.objects.get(id=pk)
+            board = Board.objects.get(url=url)
         except Exception:
             raise exceptions.NotFound
 
@@ -68,12 +68,12 @@ class BoardInfo(generics.GenericAPIView):
             except Exception:  # No shared user or board owner object exists, 404 response back
                 raise exceptions.NotFound
 
-        board_serializer = BoardInfoSerializer(pk, many=False)
+        board_serializer = BoardInfoUrlSerializer(url, many=False)
         return JsonResponse(board_serializer.data)
 
-    def delete(self, request, pk, *args, **kwargs):
+    def delete(self, request, url, *args, **kwargs):
         try:
-            board = Board.objects.get(id=pk)
+            board = Board.objects.get(url=url)
         except Exception:
             raise exceptions.NotFound
         if self.request.user == board.owner:
@@ -82,9 +82,9 @@ class BoardInfo(generics.GenericAPIView):
         else:  # Not owner of board, send 404
             raise exceptions.NotFound
 
-    def put(self, request, pk, *args, **kwargs):
+    def put(self, request, url, *args, **kwargs):
         try:
-            board = Board.objects.get(id=pk)
+            board = Board.objects.get(url=url)
         except Exception:  # 404, doesn't exist
             raise exceptions.NotFound
 

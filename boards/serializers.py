@@ -119,6 +119,76 @@ class BoardInfoSerializer(serializers.Serializer):
         }
         return return_info
 
+# Takes in the URL of a board instead of the ID, does same thing as BoardInfoSerializer
+class BoardInfoUrlSerializer(serializers.Serializer):
+    board_url = serializers.UUIDField()
+
+    # For API response, returns the board, owner, tasks and shared_users in a dictionary.
+    def to_representation(self, instance):
+        board = Board.objects.get(url=instance)
+
+        owner_info = {
+            "id": board.owner_id,
+            "username": board.owner.username,
+            "first_name": board.owner.first_name,
+            "last_name": board.owner.last_name,
+            "email": board.owner.email,
+        }
+
+        # Put the owner info inside the board info
+        board_info = {
+            "id": board.id,
+            "title": board.title,
+            "owner": owner_info,
+            "url": board.url,
+        }
+
+        # Get tasks and put them into a list
+        tasks = Task.objects.all().filter(board_id=board.id)
+
+        task_info = []
+
+        if tasks:
+            for task in tasks:
+                task_dict = {
+                    "id": task.id,
+                    "date_created": task.date_created,
+                    "title": task.title,
+                    "description": task.description,
+                    "progress_status": task.progress_status,
+                    "priority": task.priority,
+                    "owner": {
+                        "id": task.owner_id,
+                        "username": task.owner.username,
+                        "first_name": task.owner.first_name,
+                        "last_name": task.owner.last_name,
+                        "email": task.owner.email,
+                    }
+                }
+                task_info.append(task_dict)
+
+        # Get shared users
+        shared_users = SharedUser.objects.all().filter(board_id=board.id)
+        shared_user_info = []
+        if shared_users:
+            for shared_user in shared_users:
+                shared_user_dict = {
+                    "id": shared_user.id,
+                    "username": shared_user.shared_user.username,
+                    "first_name": shared_user.shared_user.first_name,
+                    "last_name": shared_user.shared_user.last_name,
+                    "email": shared_user.shared_user.email,
+                }
+                shared_user_info.append(shared_user_dict)
+
+        # Compile all of the info and return it as a dictionary
+        return_info = {
+            "board": board_info,  # This is also where the owner info resides
+            "tasks": task_info,
+            "shared_users": shared_user_info,
+        }
+        return return_info
+
 
 class BoardListSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()  # Only parameter we take in is user id

@@ -135,13 +135,7 @@ class BoardInfoUrlSerializer(serializers.Serializer):
             "email": board.owner.email,
         }
 
-        # Put the owner info inside the board info
-        board_info = {
-            "id": board.id,
-            "title": board.title,
-            "owner": owner_info,
-            "url": board.url,
-        }
+
 
         # Get tasks and put them into a list
         tasks = Task.objects.all().filter(board_id=board.id)
@@ -181,13 +175,24 @@ class BoardInfoUrlSerializer(serializers.Serializer):
                 }
                 shared_user_info.append(shared_user_dict)
 
-        # Compile all of the info and return it as a dictionary
-        return_info = {
-            "board": board_info,  # This is also where the owner info resides
+        # Put the owner info inside the board info
+        board_info = {
+            "id": board.id,
+            "title": board.title,
+            "owner": owner_info,
+            "url": board.url,
             "tasks": task_info,
             "shared_users": shared_user_info,
         }
-        return return_info
+        return board_info
+
+        # Compile all of the info and return it as a dictionary
+        # return_info = {
+        #     "board": board_info,  # This is also where the owner info resides
+        #     "tasks": task_info,
+        #     "shared_users": shared_user_info,
+        # }
+        # return return_info
 
 
 class BoardListSerializer(serializers.Serializer):

@@ -25,7 +25,16 @@ export class Login extends Component {
 
     render() {
         if(this.props.isAuthenticated) {
-            return <Redirect to="/" />;
+            // return <Redirect to="/" />;
+            console.log("ee")
+            console.log(this.props.location.state)
+            if(this.props.location.state !== undefined) {
+                return <Redirect to={this.props.location.state.url}/>
+            }
+            return <Redirect to="/"/>
+            // return <Redirect to={this.props.location.state.component}/>
+
+
         }
         const { username, password } = this.state;
         return (

@@ -12,7 +12,14 @@ const PrivateRoute = ({component: Component, auth, ...rest}) => (
                 return <h2>Loading...</h2>;
             }
             else if(!auth.isAuthenticated) {
-                return <Redirect to="/login" />;
+                console.log(rest)
+                return <Redirect to={{
+                    pathname: "/login",
+                    state: {
+                        url: rest.computedMatch.url
+
+                    }
+                }}/>;
             }
 
             else {

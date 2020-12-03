@@ -11,6 +11,7 @@ import Alerts from "./layout/Alerts";
 import Login from "./accounts/Login";
 import Register from "./accounts/Register";
 import PrivateRoute from "./common/PrivateRoute";
+import BoardDashboard from "./specific-board/BoardDashboard.js"
 
 import { Provider } from "react-redux";
 import store from "../store.js";
@@ -32,18 +33,19 @@ class App extends Component {
              <Provider store={store}>
                 <AlertProvider template={AlertTemplate} {...alertOptions}>
                     <Router>
-                    <Fragment>
-                        <Header/>
-                        <Alerts />
-                        <div className="container">
-                            <Switch>
-                                <PrivateRoute exact path="/" component={ Dashboard }/>
-                                <Route exact path="/register" component={ Register }/>
-                                <Route exact path="/login" component={ Login }/>
-                            </Switch>
-                        </div>
-                    </Fragment>
-                        </Router>
+                        <Fragment>
+                            <Header/>
+                            <Alerts />
+                            <div className="container">
+                                <Switch>
+                                    <PrivateRoute exact path="/" component={ Dashboard }/>
+                                    <Route exact path="/register" component={ Register }/>
+                                    <Route exact path="/login" component={ Login }/>
+                                    <PrivateRoute exact path="/board/:url" component={ BoardDashboard }/>
+                                </Switch>
+                            </div>
+                        </Fragment>
+                    </Router>
                 </AlertProvider>
             </Provider>
 

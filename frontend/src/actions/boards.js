@@ -33,3 +33,46 @@ export const createBoard = (board) => (dispatch, getState) => {
         })
         .catch(err => dispatch(returnErrors(err.response.data, err.response.status)));
 }
+
+// Update a board
+// export const updateBoard = (board) => (dispatch, getState) => {
+//     axios.put(`/api/boards/${url}`, title, tokenConfig(getState))
+//         .then(res => {
+//             dispatch(createMessage({updateBoard: "Board Updated"}))
+//             dispatch({
+//                 type: UPDATE_BOARD,
+//                 payload: {
+//                     id: id,
+//                     title: title,
+//                 }
+//             })
+//         }).catch(err => dispatch(returnErrors(err.response.data, err.response.status)));
+// }
+// Delete a board
+
+// Get one board and its info
+export const getBoard = (url, user_id) => (dispatch, getState) => {
+    axios.get(`api/board/${url}`, tokenConfig(getState))
+        .then(res => {
+            dispatch(createMessage({getBoard: "Board Entered"}))
+            dispatch({
+                type: GET_BOARD_INFO,
+                // payload: [res.data, user_id]
+                payload: {
+                    response: res.data,
+                    user_id: user_id,
+                }
+                // user_id: user_id,
+            })
+        })
+        // .catch(err => dispatch(returnErrors(err.response.data, err.response.status)));
+}
+
+// Below actions should be in new scripts
+// Create a shared user
+
+// Delete a shared user
+
+// Create a task
+
+// Delete a task

@@ -25,14 +25,12 @@ export class Login extends Component {
 
     render() {
         if(this.props.isAuthenticated) {
-            // return <Redirect to="/" />;
-            console.log("ee")
-            console.log(this.props.location.state)
+            // We check if props.location.state is undefined. If it isn't that means we got passed a URL we can use
+            // to redirect the user once they are unauthenticated. Otherwise we just redirect them to home screen.
             if(this.props.location.state !== undefined) {
                 return <Redirect to={this.props.location.state.url}/>
             }
             return <Redirect to="/"/>
-            // return <Redirect to={this.props.location.state.component}/>
 
 
         }

@@ -7,6 +7,7 @@ import {SharedUserForm} from "./SharedUserForm";
 import {SharedUsers} from "./SharedUsers";
 import {TaskForm} from "./TaskForm";
 import {Tasks} from "./Tasks";
+import { Route, Switch, Redirect } from "react-router-dom";
 
 export class BoardDashboard extends Component {
     static propTypes = {
@@ -16,6 +17,7 @@ export class BoardDashboard extends Component {
         isLoading: PropTypes.bool,
         auth: PropTypes.object,
         isOnSpecificBoard: PropTypes.bool,
+        errorMessage: PropTypes.object,
     }
 
     componentDidMount() {
@@ -32,6 +34,15 @@ export class BoardDashboard extends Component {
             if(this.props.boards.owned_boards.length === 1){
                 return(
                 <Fragment>
+                    <div className="row">
+                        <div className="col-lg-8 bg-secondary">
+                            <h1>Test</h1>
+                        </div>
+                        <div className="col-lg-4 bg-dark">
+                            <h1>Test</h1>
+                        </div>
+                    </div>
+
                     <h1>{this.props.boards.owned_boards[0].title}</h1>
 
                 </Fragment>
@@ -47,12 +58,24 @@ export class BoardDashboard extends Component {
             }
 
         }
-        // Props have not loaded yet
-        return(
+
+        // Check if there is an errorMessage. If there is, then we have a 404 and should redirect to the home page.
+        // Otherwise, we are just loading in and waiting for props to load.
+        if(Object.keys(this.props.errorMessage).length === 0){
+            return(
             <Fragment>
                 <h1>Loading</h1>
             </Fragment>
         )
+        }
+        // 404, should redirect home or to an error screen
+        return (
+            <Fragment>
+                <Redirect to={"/"}/>
+            </Fragment>
+        )
+
+
     }
 }
 function mapStateToProps(state) {
@@ -61,6 +84,7 @@ function mapStateToProps(state) {
         isLoading: state.auth.isLoading,
         auth: state.auth,
         isOnSpecificBoard: state.boards.boards.isOnSpecificBoard,
+        errorMessage: state.errors.msg,
     }
 }
 export default connect(mapStateToProps, { getBoard })(BoardDashboard);

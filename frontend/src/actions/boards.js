@@ -57,15 +57,13 @@ export const getBoard = (url, user_id) => (dispatch, getState) => {
             dispatch(createMessage({getBoard: "Board Entered"}))
             dispatch({
                 type: GET_BOARD_INFO,
-                // payload: [res.data, user_id]
                 payload: {
                     response: res.data,
                     user_id: user_id,
                 }
-                // user_id: user_id,
             })
         })
-        // .catch(err => dispatch(returnErrors(err.response.data, err.response.status)));
+        .catch(err => dispatch(returnErrors(err.response.data, err.response.status)));
 }
 
 // Below actions should be in new scripts

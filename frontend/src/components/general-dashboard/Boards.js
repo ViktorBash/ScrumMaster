@@ -2,6 +2,8 @@ import React, { Component, Fragment } from 'react';
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import { getBoards } from "../../actions/boards";
+import { Link } from "react-router-dom";
+
 
 export class Boards extends Component {
     static propTypes = {
@@ -41,7 +43,9 @@ export class Boards extends Component {
                                 <td>{board.title}</td>
                                 <td>{board.owner.username}</td>
                                 <td>
-                                    <button className="btn btn-success btn-sm">Open</button>
+                                    <Link to={`/board/${board.url}`}>
+                                        <button className="btn btn-success btn-sm">Open</button>
+                                    </Link>
                                 </td>
                             </tr>
                         ))}
@@ -50,7 +54,9 @@ export class Boards extends Component {
                                 <td>{board.title}</td>
                                 <td>{board.owner.username}</td>
                                 <td>
-                                    <button className="btn btn-success btn-sm">Open</button>
+                                    <Link to={`/board/${board.url}`}>
+                                        <button className="btn btn-success btn-sm">Open</button>
+                                    </Link>
                                 </td>
                             </tr>
                         ))}

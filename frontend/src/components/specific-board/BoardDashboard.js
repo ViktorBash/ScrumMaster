@@ -41,9 +41,9 @@ export class BoardDashboard extends Component {
                             <TaskForm/>
                             <Tasks tasks={this.props.boards.owned_boards[0].tasks}/>
                         </div>
-                        <div className="col-lg-4 bg-dark">
+                        <div className="col-lg-4">
                             <h1>Shared Users</h1>
-                            <SharedUsers/>
+                            <SharedUsers shared_users={this.props.boards.owned_boards[0].shared_users}/>
                             <SharedUserForm/>
                             <BoardTitleForm/>
                         </div>

@@ -140,3 +140,6 @@ node_modules/
 
 # to-do file
 todo.txt
+
+# compiled javascript
+frontend/static/frontend/main.js

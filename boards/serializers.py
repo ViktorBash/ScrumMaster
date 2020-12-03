@@ -251,6 +251,7 @@ class BoardListSerializer(serializers.Serializer):
         return_info = {
             "owned_boards": owned_boards_list,
             "shared_boards": shared_boards_list,
+            "isOnSpecificBoard": False,
         }
         return return_info
 

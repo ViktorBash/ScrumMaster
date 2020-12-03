@@ -28,22 +28,28 @@ export class BoardDashboard extends Component {
     }
 
     render() {
+
         // If isOnASpecificBoard === true, then we the props we need to load the board
         if(this.props.isOnSpecificBoard){
             // We have to render a board we own in the owned_boards array
             if(this.props.boards.owned_boards.length === 1){
                 return(
                 <Fragment>
+                    <h1>{this.props.boards.owned_boards[0].title}</h1>
                     <div className="row">
-                        <div className="col-lg-8 bg-secondary">
-                            <h1>Test</h1>
+                        <div className="col-lg-8">
+                            <TaskForm/>
+                            <Tasks tasks={this.props.boards.owned_boards[0].tasks}/>
                         </div>
                         <div className="col-lg-4 bg-dark">
-                            <h1>Test</h1>
+                            <h1>Shared Users</h1>
+                            <SharedUsers/>
+                            <SharedUserForm/>
+                            <BoardTitleForm/>
                         </div>
                     </div>
 
-                    <h1>{this.props.boards.owned_boards[0].title}</h1>
+
 
                 </Fragment>
                         )

@@ -35,19 +35,20 @@ export const createBoard = (board) => (dispatch, getState) => {
 }
 
 // Update a board
-// export const updateBoard = (board) => (dispatch, getState) => {
-//     axios.put(`/api/boards/${url}`, title, tokenConfig(getState))
-//         .then(res => {
-//             dispatch(createMessage({updateBoard: "Board Updated"}))
-//             dispatch({
-//                 type: UPDATE_BOARD,
-//                 payload: {
-//                     id: id,
-//                     title: title,
-//                 }
-//             })
-//         }).catch(err => dispatch(returnErrors(err.response.data, err.response.status)));
-// }
+export const updateBoard = (id, url, title) => (dispatch, getState) => {
+    console.log("EEE")
+    axios.put(`/api/board/${url}/`, {"title": title}, tokenConfig(getState))
+        .then(res => {
+            dispatch(createMessage({updateBoard: "Board Updated"}))
+            dispatch({
+                type: UPDATE_BOARD,
+                payload: {
+                    id: id,
+                    title: title,
+                }
+            })
+        }).catch(err => dispatch(returnErrors(err.response.data, err.response.status)));
+}
 // Delete a board
 
 // Get one board and its info

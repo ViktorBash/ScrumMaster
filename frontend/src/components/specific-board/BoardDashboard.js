@@ -1,7 +1,7 @@
 import React, { Fragment, Component } from 'react';
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
-import { getBoard } from "../../actions/boards";
+import { getBoard, updateBoard } from "../../actions/boards";
 import { BoardTitleForm } from "./BoardTitleForm";
 import {SharedUserForm} from "./SharedUserForm";
 import {SharedUsers} from "./SharedUsers";
@@ -12,6 +12,7 @@ import { Route, Switch, Redirect } from "react-router-dom";
 export class BoardDashboard extends Component {
     static propTypes = {
         getBoard: PropTypes.func.isRequired,
+        updateBoard: PropTypes.func.isRequired,
         boards: PropTypes.object.isRequired,
         isAuthenticated: PropTypes.bool,
         isLoading: PropTypes.bool,
@@ -45,7 +46,7 @@ export class BoardDashboard extends Component {
                             <h1>Shared Users</h1>
                             <SharedUsers shared_users={this.props.boards.owned_boards[0].shared_users}/>
                             <SharedUserForm/>
-                            <BoardTitleForm/>
+                            <BoardTitleForm board={this.props.boards.owned_boards[0]} updateBoard={this.props.updateBoard}/>
                         </div>
                     </div>
 
@@ -93,4 +94,4 @@ function mapStateToProps(state) {
         errorMessage: state.errors.msg,
     }
 }
-export default connect(mapStateToProps, { getBoard })(BoardDashboard);
+export default connect(mapStateToProps, { getBoard, updateBoard })(BoardDashboard);

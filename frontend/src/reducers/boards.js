@@ -25,20 +25,17 @@ export default function(state = initialState, action) {
                 ...state,
                 boards: newState
             }
-        // case "UPDATE_BOARD":
-        //     let newState2 = JSON.parse(JSON.stringify(state.boards))
-        //     // Loops through all of the owned boards checking if payload ID is equal to current board ID.
-        //     // if it is, it changes the title and breaks loop, then returns state.
-        //     for (let i = 0; i < newState2.owned_boards.length, i++;){
-        //         if(newState2.owned_boards[i].id === action.payload.id){
-        //             newState2.owned_boards[i].title = action.payload.title;
-        //             break;
-        //         }
-        //     }
-        //     return {
-        //         ...state,
-        //         boards: newState2,
-        //     }
+        case "UPDATE_BOARD":
+            let newState2 = JSON.parse(JSON.stringify(state.boards))
+            // Since we are updating the board title, we are on the page of that board
+            // Therefore, there is only one board in the owned_boards array at this point
+            // So instead of having to loop and change the title based on ID or url, we can just change
+            // the only board that is in owned boards
+            newState2.owned_boards[0].title = action.payload.title
+            return {
+                ...state,
+                boards: newState2,
+            }
         case "GET_BOARD_INFO":
             let newState3 = JSON.parse(JSON.stringify(state.boards))
             // Need to check if we are the owner of the board we received in the payload. If it is, then we add it to
